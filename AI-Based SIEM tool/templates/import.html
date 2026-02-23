@@ -1,0 +1,672 @@
+{% extends "base.html" %}
+
+{% block title %}Import Dataset - SIEM AI System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-database"></i> Import Dataset</h4>
+            </div>
+            <div class="card-body">
+                <!-- Step Indicator -->
+                <div class="steps mb-4">
+                    <div class="row">
+                        <div class="col-4">
+                            <div class="step active" id="step1">
+                                <div class="step-circle">1</div>
+                                <div class="step-label">Select Dataset</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="step" id="step2">
+                                <div class="step-circle">2</div>
+                                <div class="step-label">Configure</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="step" id="step3">
+                                <div class="step-circle">3</div>
+                                <div class="step-label">Import</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 1: Select Dataset -->
+                <div id="step1-content">
+                    <h5 class="mb-3">Choose a dataset to work with:</h5>
+                    <!-- Import New Dataset -->
+                    <div class="mb-4">
+                        <h6><i class="fas fa-upload"></i> Upload New Dataset</h6>
+                        <div class="upload-area" id="dropZone">
+                            <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                            <p class="mb-2">Drag & drop your CSV file here or</p>
+                            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                <i class="fas fa-folder-open"></i> Browse Files
+                            </button>
+                            <input type="file" id="fileInput" accept=".csv" style="display: none;">
+                            <p class="mt-2 small text-muted">Supported format: CSV</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Configure -->
+                <div id="step2-content" style="display: none;">
+                    <h5 class="mb-3">Configure Import Settings</h5>
+
+                    <div class="alert alert-info" id="dataset-info"></div>
+
+                    <!-- ROW SELECTION SLIDER -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-sliders-h"></i> Number of Rows to Import
+                        </label>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <input type="range" class="form-range" id="rowSlider" min="1000" max="1000000" step="1000" value="100000">
+                            </div>
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="rowCount" value="100000" min="1000" max="1000000" step="1000">
+                                    <span class="input-group-text">rows</span>
+                                </div>
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Total rows in dataset: <span id="totalRows">0</span> |
+                            Recommended: 100,000 for quick testing
+                        </small>
+                    </div>
+
+                    <!-- Preview Table -->
+                    <h6>Data Preview (first 10 rows)</h6>
+                    <div class="table-responsive mb-3" style="max-height: 200px;">
+                        <table class="table table-sm table-striped" id="preview-table">
+                            <thead>
+                                <tr id="preview-header"></tr>
+                            </thead>
+                            <tbody id="preview-body"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Column Mapping -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <label class="form-label small">Timestamp Column</label>
+                                <select class="form-control form-control-sm" id="col-timestamp">
+                                    <option value="">Auto-detect</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <label class="form-label small">User ID Column</label>
+                                <select class="form-control form-control-sm" id="col-user">
+                                    <option value="">Auto-detect</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <label class="form-label small">IP Address Column</label>
+                                <select class="form-control form-control-sm" id="col-ip">
+                                    <option value="">Auto-detect</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <label class="form-label small">Country Column</label>
+                                <select class="form-control form-control-sm" id="col-country">
+                                    <option value="">Auto-detect</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <label class="form-label small">Device Type Column</label>
+                                <select class="form-control form-control-sm" id="col-device">
+                                    <option value="">Auto-detect</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <label class="form-label small">Success Column</label>
+                                <select class="form-control form-control-sm" id="col-success">
+                                    <option value="">Auto-detect</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <label class="form-label small">Attack Label Column</label>
+                                <select class="form-control form-control-sm" id="col-attack">
+                                    <option value="">Auto-detect</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Import Progress -->
+                <div id="step3-content" style="display: none;">
+                    <h5 class="mb-3 text-center">Importing Dataset</h5>
+
+                    <div class="text-center mb-4">
+                        <div class="spinner-border text-primary" role="status" id="import-spinner">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="mt-3" id="import-status">Processing...</h5>
+
+                        <!-- Progress Bar -->
+                        <div class="progress mt-3" style="height: 25px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 id="import-progress" style="width: 0%">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Import Results -->
+                    <div id="import-result" style="display: none;">
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> Dataset imported successfully!
+                        </div>
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="card bg-primary text-white">
+                                    <div class="card-body">
+                                        <h4 id="result-rows">0</h4>
+                                        <small>Rows Imported</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="card bg-info text-white">
+                                    <div class="card-body">
+                                        <h4 id="result-columns">0</h4>
+                                        <small>Columns</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body">
+                                        <h4 id="result-size">0</h4>
+                                        <small>Size (MB)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="mt-4 d-flex justify-content-between">
+                    <button class="btn btn-secondary" id="prevBtn" onclick="prevStep()" disabled>
+                        <i class="fas fa-arrow-left"></i> Previous
+                    </button>
+                    <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">
+                        Next <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden data storage -->
+<input type="hidden" id="selected-file" value="">
+<input type="hidden" id="file-path" value="">
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentStep = 1;
+    let selectedFile = null;
+    let fileData = null;
+    let totalRows = 0;
+
+    $(document).ready(function() {
+        // Sync slider with number input
+        $('#rowSlider').on('input', function() {
+            $('#rowCount').val($(this).val());
+        });
+
+        $('#rowCount').on('input', function() {
+            let val = $(this).val();
+            if (val < 1000) $(this).val(1000);
+            if (val > 1000000) $(this).val(1000000);
+            $('#rowSlider').val($(this).val());
+        });
+
+        // File input change
+        $('#fileInput').on('change', function(e) {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                uploadAndPreview(selectedFile);
+            }
+        });
+
+        // Drag and drop
+        const dropZone = document.getElementById('dropZone');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+
+            if (e.dataTransfer.files.length > 0) {
+                selectedFile = e.dataTransfer.files[0];
+                uploadAndPreview(selectedFile);
+            }
+        });
+    });
+
+    function selectDataset(filename) {
+        showLoading('Loading dataset info...');
+
+        $.ajax({
+            url: '/api/dataset-info',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({filename: filename}),
+            success: function(response) {
+                hideLoading();
+                if (response.success) {
+                    fileData = response;
+                    totalRows = response.total_rows;
+                    $('#totalRows').text(totalRows.toLocaleString());
+                    $('#selected-file').val(filename);
+                    $('#file-path').val(response.path);
+
+                    // Populate column selects
+                    populateColumnSelects(response.columns);
+
+                    // Show preview
+                    showPreview(response.preview);
+
+                    // Move to step 2
+                    currentStep = 2;
+                    updateSteps();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr) {
+                hideLoading();
+                alert('Error loading dataset: ' + xhr.responseText);
+            }
+        });
+    }
+
+    function uploadAndPreview(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        showLoading('Uploading and previewing...');
+
+        $.ajax({
+            url: '/api/upload-preview',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                hideLoading();
+                if (response.success) {
+                    fileData = response;
+                    totalRows = response.total_rows;
+                    $('#totalRows').text(totalRows.toLocaleString());
+                    $('#selected-file').val(response.filename);
+                    $('#file-path').val(response.path);
+
+                    populateColumnSelects(response.columns);
+                    showPreview(response.preview);
+
+                    currentStep = 2;
+                    updateSteps();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr) {
+                hideLoading();
+                alert('Upload failed: ' + xhr.responseText);
+            }
+        });
+    }
+
+    function populateColumnSelects(columns) {
+        const selects = ['col-timestamp', 'col-user', 'col-ip', 'col-country',
+                        'col-device', 'col-success', 'col-attack'];
+
+        selects.forEach(selectId => {
+            const select = $('#' + selectId);
+            select.empty();
+            select.append('<option value="">Auto-detect</option>');
+
+            columns.forEach(col => {
+                select.append(`<option value="${col}">${col}</option>`);
+            });
+        });
+
+        // Auto-detect common columns
+        columns.forEach(col => {
+            const lower = col.toLowerCase();
+            if (lower.includes('timestamp') || lower.includes('time') || lower.includes('date'))
+                $('#col-timestamp').val(col);
+            if (lower.includes('user') || lower.includes('account') || lower.includes('id'))
+                $('#col-user').val(col);
+            if (lower.includes('ip'))
+                $('#col-ip').val(col);
+            if (lower.includes('country'))
+                $('#col-country').val(col);
+            if (lower.includes('device') || lower.includes('agent'))
+                $('#col-device').val(col);
+            if (lower.includes('success') || lower.includes('status'))
+                $('#col-success').val(col);
+            if (lower.includes('attack') || lower.includes('malicious') || lower.includes('label'))
+                $('#col-attack').val(col);
+        });
+    }
+
+    function showPreview(rows) {
+        if (!rows || rows.length === 0) return;
+
+        // Get columns from first row
+        const columns = Object.keys(rows[0]);
+
+        // Create header
+        let headerHtml = '';
+        columns.forEach(col => {
+            headerHtml += `<th>${col}</th>`;
+        });
+        $('#preview-header').html(headerHtml);
+
+        // Create body
+        let bodyHtml = '';
+        rows.forEach(row => {
+            bodyHtml += '<tr>';
+            columns.forEach(col => {
+                let value = row[col] || '';
+                // Truncate long values
+                if (typeof value === 'string' && value.length > 30) {
+                    value = value.substring(0, 30) + '...';
+                }
+                bodyHtml += `<td>${value}</td>`;
+            });
+            bodyHtml += '</tr>';
+        });
+        $('#preview-body').html(bodyHtml);
+
+        // Update dataset info
+        $('#dataset-info').html(`
+            <i class="fas fa-info-circle"></i>
+            <strong>${$('#selected-file').val()}</strong><br>
+            Total rows: <span class="fw-bold">${totalRows.toLocaleString()}</span> |
+            Columns: <span class="fw-bold">${columns.length}</span>
+        `);
+    }
+
+    function importDataset() {
+        // Validate required fields
+        if (!$('#file-path').val()) {
+            alert('No file selected');
+            return;
+        }
+
+        const config = {
+            filename: $('#selected-file').val(),
+            filepath: $('#file-path').val(),
+            rows: parseInt($('#rowCount').val()),
+            columns: {
+                timestamp: $('#col-timestamp').val() || null,
+                user: $('#col-user').val() || null,
+                ip: $('#col-ip').val() || null,
+                country: $('#col-country').val() || null,
+                device: $('#col-device').val() || null,
+                success: $('#col-success').val() || null,
+                attack: $('#col-attack').val() || null
+            }
+        };
+
+        // Show step 3
+        currentStep = 3;
+        updateSteps();
+
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 5;
+            if (progress <= 90) {
+                $('#import-progress').css('width', progress + '%').text(progress + '%');
+            }
+        }, 500);
+
+        $.ajax({
+            url: '/api/import-dataset',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(config),
+            success: function(response) {
+            clearInterval(interval);
+        if (response.success) {
+        $('#import-progress').css('width', '100%').text('100%');
+        $('#import-status').text('Import complete!');
+        $('#import-spinner').hide();
+
+        $('#result-rows').text(response.rows.toLocaleString());
+        $('#result-columns').text(response.columns);
+        $('#result-size').text(response.size_mb);
+
+        $('#import-result').show();
+
+        // CHANGE THIS LINE - Make sure it points to /dashboard
+        $('#nextBtn').html('Go to Dashboard <i class="fas fa-tachometer-alt"></i>');
+        $('#nextBtn').off('click').on('click', function() {
+            window.location.href = '/dashboard';  // Make sure this is correct
+        });
+    }
+        else {
+        $('#import-status').text('Error: ' + response.message);
+        $('#import-progress').css('width', '0%').text('0%');
+    }},
+            error: function(xhr) {
+                clearInterval(interval);
+                $('#import-status').text('Error: ' + xhr.responseText);
+                $('#import-progress').css('width', '0%').text('0%');
+            }
+        });
+    }
+
+    function nextStep() {
+    if (currentStep === 1) {
+        if (!$('#selected-file').val() && !selectedFile) {
+            alert('Please select a dataset first');
+            return;
+        }
+        // If file is selected but we haven't loaded preview, load it
+        if (selectedFile && !fileData) {
+            uploadAndPreview(selectedFile);
+            return;
+        }
+        importDataset();
+    } else if (currentStep === 2) {
+        importDataset();
+    } else if (currentStep === 3) {
+        // CHANGE THIS - Navigate to dashboard
+        window.location.href = '/dashboard';  // Make sure this path is correct
+    }
+}
+
+    function prevStep() {
+        if (currentStep > 1) {
+            currentStep--;
+            updateSteps();
+        }
+    }
+
+    function updateSteps() {
+        for (let i = 1; i <= 3; i++) {
+            if (i < currentStep) {
+                $(`#step${i}`).addClass('completed').removeClass('active');
+            } else if (i === currentStep) {
+                $(`#step${i}`).addClass('active').removeClass('completed');
+            } else {
+                $(`#step${i}`).removeClass('active completed');
+            }
+        }
+
+        $(`#step1-content, #step2-content, #step3-content`).hide();
+        $(`#step${currentStep}-content`).show();
+
+        $('#prevBtn').prop('disabled', currentStep === 1);
+
+        if (currentStep === 3) {
+            $('#nextBtn').html('Go to Dashboard <i class="fas fa-tachometer-alt"></i>');
+        } else {
+            $('#nextBtn').html('Next <i class="fas fa-arrow-right"></i>');
+        }
+    }
+
+    function showLoading(message) {
+        // You can implement a loading overlay here
+        console.log('Loading:', message);
+    }
+
+    function hideLoading() {
+        console.log('Loading complete');
+    }
+</script>
+
+<style>
+    .steps {
+        position: relative;
+        margin-bottom: 30px;
+    }
+
+    .step {
+        text-align: center;
+        position: relative;
+    }
+
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        background: #e9ecef;
+        border-radius: 50%;
+        margin: 0 auto 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #6c757d;
+        transition: all 0.3s;
+        z-index: 2;
+        position: relative;
+    }
+
+    .step.active .step-circle {
+        background: #007bff;
+        color: white;
+        transform: scale(1.1);
+    }
+
+    .step.completed .step-circle {
+        background: #28a745;
+        color: white;
+    }
+
+    .step.completed .step-circle:after {
+        content: '✓';
+        margin-left: 2px;
+    }
+
+    .step-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .step.active .step-label {
+        color: #007bff;
+        font-weight: bold;
+    }
+
+    .step.completed .step-label {
+        color: #28a745;
+    }
+
+    /* Progress line between steps */
+    .steps .row {
+        position: relative;
+    }
+
+    .steps .row:before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 15%;
+        right: 15%;
+        height: 2px;
+        background: #e9ecef;
+        z-index: 1;
+    }
+
+    .upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        background: #f8f9fa;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .upload-area:hover, .upload-area.dragover {
+        border-color: #007bff;
+        background: #e7f1ff;
+    }
+
+    #preview-table {
+        font-size: 0.8rem;
+    }
+
+    #preview-table td {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .steps .row:before {
+            left: 10%;
+            right: 10%;
+        }
+
+        .step-label {
+            font-size: 0.8rem;
+        }
+
+        .step-circle {
+            width: 35px;
+            height: 35px;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}

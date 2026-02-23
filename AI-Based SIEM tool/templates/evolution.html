@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Evolution - SIEM AI System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-chart-line text-info"></i>
+            Evolution Tracking
+        </h1>
+    </div>
+</div>
+
+<!-- Evolution Stats -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h3>{{ cycles }}</h3>
+                <p class="mb-0">Evolution Cycles</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h3>{{ total_rules }}</h3>
+                <p class="mb-0">Total Rules Generated</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h3>{{ metrics|length }}</h3>
+                <p class="mb-0">Performance Records</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Chart -->
+{% if perf_chart %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Performance Evolution</h5>
+            </div>
+            <div class="card-body">
+                <div id="perf-chart"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Evolution Timeline -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Evolution Timeline</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for iteration in evolution.iterations %}
+                    <div class="timeline-item">
+                        <div class="timeline-badge">
+                            <i class="fas fa-sync-alt"></i>
+                        </div>
+                        <div class="timeline-panel">
+                            <div class="timeline-heading">
+                                <h5 class="timeline-title">
+                                    Cycle {{ loop.index }}
+                                </h5>
+                                <p class="text-muted">
+                                    <i class="fas fa-clock"></i>
+                                    {{ iteration.timestamp }}
+                                </p>
+                            </div>
+                            <div class="timeline-body">
+                                <p>Data: {{ iteration.data_file }}</p>
+                                {% if evolution.performance_metrics[loop.index0] %}
+                                <div class="progress mb-2">
+                                    <div class="progress-bar bg-success"
+                                         style="width: {{ evolution.performance_metrics[loop.index0].detection_rate }}%">
+                                        Detection: {{ "%.1f"|format(evolution.performance_metrics[loop.index0].detection_rate) }}%
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    var perfChart = {{ perf_chart|safe }};
+    if (perfChart) {
+        Plotly.newPlot('perf-chart', perfChart.data, perfChart.layout);
+    }
+</script>
+{% endblock %}

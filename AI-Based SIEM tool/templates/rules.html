@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}Rules - SIEM AI System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-gavel text-warning"></i>
+            Generated Sigma Rules
+        </h1>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h3>{{ total_rules }}</h3>
+                <p class="mb-0">Total Rules</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h3>{{ rules_by_severity.critical|length }}</h3>
+                <p class="mb-0">Critical</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h3>{{ rules_by_severity.high|length }}</h3>
+                <p class="mb-0">High</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h3>{{ rules_by_severity.medium|length + rules_by_severity.low|length }}</h3>
+                <p class="mb-0">Medium/Low</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rules List -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="ruleTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">All Rules</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="critical-tab" data-bs-toggle="tab" data-bs-target="#critical" type="button" role="tab">Critical</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="high-tab" data-bs-toggle="tab" data-bs-target="#high" type="button" role="tab">High</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="medium-tab" data-bs-toggle="tab" data-bs-target="#medium" type="button" role="tab">Medium</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="low-tab" data-bs-toggle="tab" data-bs-target="#low" type="button" role="tab">Low</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="ruleTabContent">
+                    <!-- All Rules Tab -->
+                    <div class="tab-pane fade show active" id="all" role="tabpanel">
+                        {% for rule in rules %}
+                        <div class="rule-item mb-3 p-3 border rounded severity-{{ rule.severity }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <span class="badge severity-{{ rule.severity }} mb-2"></span>
+                                    {{ rule.title }}
+                                </h5>
+                                <div>
+                                    <button class="btn btn-sm btn-info" onclick="viewRule('{{ rule.file }}')" title="View Rule">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <a href="{{ url_for('download_rule', filename=rule.file) }}"
+                                       class="btn btn-sm btn-success" title="Download Rule">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <p  class="mt-2 mb-1 text-muted">{{ rule.description }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-file"></i> {{ rule.file }}
+                            </small>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No rules generated yet. Run rule generator first.
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Critical Rules Tab -->
+                    <div class="tab-pane fade" id="critical" role="tabpanel">
+                        {% for rule in rules_by_severity.critical %}
+                        <div class="rule-item mb-3 p-3 border rounded severity-{{ rule.severity }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <span class="badge severity-{{ rule.severity }} mb-2"></span>
+                                    {{ rule.title }}
+                                </h5>
+                                <div>
+                                    <button class="btn btn-sm btn-info" onclick="viewRule('{{ rule.file }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <a href="{{ url_for('download_rule', filename=rule.file) }}"
+                                       class="btn btn-sm btn-success">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <p class="mt-2 mb-1 text-muted">{{ rule.description }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-file"></i> {{ rule.file }}
+                            </small>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">No critical rules</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- High Rules Tab -->
+                    <div class="tab-pane fade" id="high" role="tabpanel">
+                        {% for rule in rules_by_severity.high %}
+                        <div class="rule-item mb-3 p-3 border rounded severity-{{ rule.severity }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <span class="badge severity-{{ rule.severity }} mb-2"></span>
+                                    {{ rule.title }}
+                                </h5>
+                                <div>
+                                    <button class="btn btn-sm btn-info" onclick="viewRule('{{ rule.file }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <a href="{{ url_for('download_rule', filename=rule.file) }}"
+                                       class="btn btn-sm btn-success">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <p class="mt-2 mb-1 text-muted">{{ rule.description }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-file"></i> {{ rule.file }}
+                            </small>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">No high severity rules</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Medium Rules Tab -->
+                    <div class="tab-pane fade" id="medium" role="tabpanel">
+                        {% for rule in rules_by_severity.medium %}
+                        <div class="rule-item mb-3 p-3 border rounded severity-{{ rule.severity }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <span class="badge severity-{{ rule.severity }} mb-2"></span>
+                                    {{ rule.title }}
+                                </h5>
+                                <div>
+                                    <button class="btn btn-sm btn-info" onclick="viewRule('{{ rule.file }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <a href="{{ url_for('download_rule', filename=rule.file) }}"
+                                       class="btn btn-sm btn-success">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <p class="mt-2 mb-1 text-muted">{{ rule.description }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-file"></i> {{ rule.file }}
+                            </small>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">No medium severity rules</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Low Rules Tab -->
+                    <div class="tab-pane fade" id="low" role="tabpanel">
+                        {% for rule in rules_by_severity.low %}
+                        <div class="rule-item mb-3 p-3 border rounded severity-{{ rule.severity }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <span class="badge severity-{{ rule.severity }} mb-2"></span>
+                                    {{ rule.title }}
+                                </h5>
+                                <div>
+                                    <button class="btn btn-sm btn-info" onclick="viewRule('{{ rule.file }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <a href="{{ url_for('download_rule', filename=rule.file) }}"
+                                       class="btn btn-sm btn-success">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <p class="mt-2 mb-1 text-muted">{{ rule.description }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-file"></i> {{ rule.file }}
+                            </small>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">No low severity rules</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rule Viewer Modal -->
+<div class="modal fade" id="ruleModal" tabindex="-1" aria-labelledby="ruleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ruleModalLabel">
+                    <i class="fas fa-file-code"></i> Rule Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <pre><code id="ruleContent" class="language-yaml"></code></pre>
+                <div id="ruleLoading" class="text-center" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" id="downloadRuleBtn" class="btn btn-success">
+                    <i class="fas fa-download"></i> Download
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Copy notification toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="copyToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong class="me-auto">Success</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+            Rule copied to clipboard!
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function viewRule(filename) {
+        // Show modal and loading
+        $('#ruleModal').modal('show');
+        $('#ruleContent').hide();
+        $('#ruleLoading').show();
+        $('#ruleContent').text('Loading...');
+
+        // Update download button link
+        $('#downloadRuleBtn').attr('href', '/api/download/rule/' + filename);
+
+        // Fetch rule content
+        $.ajax({
+            url: '/api/rule/' + filename,
+            method: 'GET',
+            success: function(response) {
+                $('#ruleLoading').hide();
+                if (response.success) {
+                    $('#ruleContent').text(response.content).show();
+
+                    // Add copy button to modal header
+                    if (!$('#copyRuleBtn').length) {
+                        $('.modal-header').append(`
+                            <button class="btn btn-sm btn-outline-primary ms-2" id="copyRuleBtn" onclick="copyRuleContent()">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        `);
+                    }
+                } else {
+                    $('#ruleContent').text('Error: ' + response.message).show();
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#ruleLoading').hide();
+                $('#ruleContent').text('Error loading rule: ' + error).show();
+            }
+        });
+    }
+
+    function copyRuleContent() {
+        var content = $('#ruleContent').text();
+        navigator.clipboard.writeText(content).then(function() {
+            // Show toast notification
+            var toast = new bootstrap.Toast(document.getElementById('copyToast'));
+            toast.show();
+        }, function(err) {
+            alert('Failed to copy: ' + err);
+        });
+    }
+
+    // Initialize tooltips
+    $(document).ready(function() {
+        $('[title]').tooltip();
+    });
+
+    // Handle tab persistence
+    $('#ruleTabs button').on('shown.bs.tab', function (e) {
+        localStorage.setItem('activeRuleTab', $(e.target).attr('id'));
+    });
+
+    // Restore active tab
+    var activeTab = localStorage.getItem('activeRuleTab');
+    if (activeTab) {
+        $('#' + activeTab).tab('show');
+    }
+
+    // Add syntax highlighting if desired (optional)
+    function highlightYAML() {
+        // You can add a YAML syntax highlighter here if needed
+        // For example, using highlight.js
+    }
+</script>
+
+<style>
+    .severity-critical {
+        background-color: #ffffff !important;
+        color: black;
+    }
+    .severity-high {
+        background-color: rgb(255, 255, 255) !important;
+        color: black;
+    }
+    .severity-medium {
+        background-color: #ffffff !important;
+        color: black;
+    }
+    .severity-low {
+        background-color: #ffffff !important;
+        color: black;
+    }
+    .rule-item {
+        transition: all 0.2s;
+    }
+    .rule-item:hover {
+        box-shadow: 0 4px 8px rgb(0, 0, 0);
+        transform: translateX(5px);
+    }
+    pre {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    code {
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}

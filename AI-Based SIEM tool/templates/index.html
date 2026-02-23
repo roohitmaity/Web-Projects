@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}SIEM AI System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-home"></i>
+            Dashboard
+        </h1>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Total Events</h6>
+                        <h2 class="mb-0">{{ stats.total_events }}</h2>
+                    </div>
+                    <i class="fas fa-database fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stats-card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Anomalies</h6>
+                        <h2 class="mb-0">{{ stats.anomalies }}</h2>
+                    </div>
+                    <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stats-card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Active Rules</h6>
+                        <h2 class="mb-0">{{ stats.active_rules }}</h2>
+                    </div>
+                    <i class="fas fa-gavel fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stats-card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Evolution Cycles</h6>
+                        <h2 class="mb-0">{{ stats.evolution_cycles }}</h2>
+                    </div>
+                    <i class="fas fa-sync-alt fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Metrics -->
+{% if metrics %}
+<div class="row mb-4 prow">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3 class="text-primary">{{ metrics.detection_rate }}%</h3>
+                <p class="mb-0">Detection Rate</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3 class="text-warning">{{ metrics.false_positive_rate }}%</h3>
+                <p class="mb-0">False Positive Rate</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3 class="text-success">{{ metrics.f1_score }}</h3>
+                <p class="mb-0">F1 Score</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-clock"></i> Anomalies by Hour</h5>
+            </div>
+            <div class="card-body">
+                <div id="anomaly-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-globe"></i> Top Anomalous Countries</h5>
+            </div>
+            <div class="card-body">
+                <div id="country-chart"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Evolution Trend -->
+{% if trend_chart %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Performance Evolution</h5>
+            </div>
+            <div class="card-body">
+                <div id="trend-chart"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<!--<div class="row">-->
+<!--    <div class="col-12">-->
+<!--        <div class="card">-->
+<!--            <div class="card-header">-->
+<!--                <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>-->
+<!--            </div>-->
+<!--            <div class="card-body">-->
+<!--                <button class="btn btn-primary" onclick="runAnomalyDetection()">-->
+<!--                    <i class="fas fa-search"></i> Run Anomaly Detection-->
+<!--                </button>-->
+<!--                <button class="btn btn-success" onclick="runRuleGeneration()">-->
+<!--                    <i class="fas fa-gavel"></i> Generate Rules-->
+<!--                </button>-->
+<!--                <button class="btn btn-warning" onclick="runEvolution()">-->
+<!--                    <i class="fas fa-sync-alt"></i> Start Evolution Cycle-->
+<!--                </button>-->
+<!--                <button class="btn btn-info" onclick="refreshDashboard()">-->
+<!--                    <i class="fas fa-redo"></i> Refresh Data-->
+<!--                </button>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Render charts
+    var anomalyChart = {{ anomaly_chart|safe }};
+    if (anomalyChart) {
+        Plotly.newPlot('anomaly-chart', anomalyChart.data, anomalyChart.layout);
+    }
+
+    var countryChart = {{ country_chart|safe }};
+    if (countryChart) {
+        Plotly.newPlot('country-chart', countryChart.data, countryChart.layout);
+    }
+
+    var trendChart = {{ trend_chart|safe }};
+    if (trendChart) {
+        Plotly.newPlot('trend-chart', trendChart.data, trendChart.layout);
+    }
+</script>
+{% endblock %}
